@@ -8,6 +8,10 @@ steps:
     path: '$(Pipeline.Workspace)'
 
 - script: |
+    # Variables para la conexión al servidor Windows
+    $serverAddress = "$(Direccion_del_servidor)"
+    $username = "$(Nombre_de_usuario)"
+    $password = "$(password_de_usuario)"
     cd $(Pipeline.Workspace)
     # Descargar e instalar el agente de compilación
     Invoke-WebRequest -Uri $(agent_Uri) -OutFile agent.zip
