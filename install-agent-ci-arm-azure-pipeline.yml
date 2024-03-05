@@ -3,24 +3,31 @@ trigger:
 
 pool:
   vmImage: 'windows-latest'
-  
-steps:
-- task: DownloadPipelineArtifact@2
-  inputs:
-    artifactName: 'agent'
-    path: '$(Pipeline.Workspace)'
 
-- script: |
-    # Variables para la conexión al servidor Windows
-    $serverAddress = "$(Direccion_del_servidor)"
-    $username = "$(Nombre_de_usuario)"
-    $password = "$(password_de_usuario)"
-    cd $(Pipeline.Workspace)
-    # Descargar e instalar el agente de compilación
-    Invoke-WebRequest -Uri $(agent_Uri) -OutFile agent.zip
-    Expand-Archive agent.zip -DestinationPath agent
-    cd agent
-    .\config.cmd --unattended --url $(url_AzureDevOps) $(auth_pat_token) $(pat_token) --pool SelfHostedAgentPools --agent ag-Server06 --runasservice --windowsLogonAccount "NT AUTHORITY\NETWORK SERVICE" --windowsLogonPassword "$(windowsLogonPassword)"
-    .\svc.sh install
-    .\svc.sh start
+steps:
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      # Variables para la conexión al servidor Windows
+      $serverAddress = "$(Direccion_del_servidor)"
+      $username = "$(Nombre_de_usuario)"
+      $password = "$(password_de_usuario)"
+      # Descargar el agente de compilación
+      $url = $(agent_Uri)
+      $outputFile = "$(System.DefaultWorkingDirectory)\vsts-agent-win-x64-3.236.0.zip"
+      Invoke-WebRequest -Uri $url -OutFile $outputFile
+
+      # Extraer el archivo zip
+      Expand-Archive -Path $outputFile -DestinationPath "$(System.DefaultWorkingDirectory)\vsts-agent-win-x64-3.236.0"
+
+      # Conectar al servidor Windows y ejecutar comandos para instalar el agente
+      $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+      $credentials = New-Object System.Management.Automation.PSCredential ($username, $securePassword)
+      Enter-PSSession -ComputerName $serverAddress -Credential $credentials
+
+      # Ejecutar comandos de instalación del agente en el servidor Windows
+      # Por ejemplo, puedes ejecutar un script de instalación del agente que está incluido en la carpeta del agente descargado
+      cd "$(System.DefaultWorkingDirectory)\agente_compilacion"
+      .\config.cmd --pool $(PoolName) --agent $(AgentName)
   displayName: 'Instalar agente de compilación en el servidor Windows'
