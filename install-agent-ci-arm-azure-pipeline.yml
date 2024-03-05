@@ -1,0 +1,19 @@
+trigger:
+- main
+
+steps:
+- task: DownloadPipelineArtifact@2
+  inputs:
+    artifactName: 'agent'
+    path: '$(Pipeline.Workspace)'
+
+- script: |
+    cd $(Pipeline.Workspace)
+    # Descargar e instalar el agente de compilación
+    Invoke-WebRequest -Uri $(agent_Uri) -OutFile agent.zip
+    Expand-Archive agent.zip -DestinationPath agent
+    cd agent
+    .\config.cmd --unattended --url $(url_AzureDevOps) $(auth_pat_token) $(pat_token) --pool SelfHostedAgentPools --agent ag-Server06 --runasservice --windowsLogonAccount "NT AUTHORITY\NETWORK SERVICE" --windowsLogonPassword "$(windowsLogonPassword)"
+    .\svc.sh install
+    .\svc.sh start
+  displayName: 'Instalar agente de compilación en el servidor Windows'
