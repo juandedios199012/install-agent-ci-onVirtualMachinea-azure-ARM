@@ -9,6 +9,14 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
+      # Parámetros de configuración
+      $AzureDevOpsOrganizationUrl = "$(url_AzureDevOps)"
+      $PAT = "$(pat_token)"  # Personal Access Token para autenticar con Azure DevOps
+      
+      # Variables del Agent
+      $PoolName = "$(PoolName)"
+      $AgentName = "$(AgentName)"
+      
       # Variables para la conexión al servidor Windows
       $serverAddress = "$(Direccion_del_servidor)"
       $username = "$(Nombre_de_usuario)"
@@ -26,8 +34,8 @@ steps:
       $credentials = New-Object System.Management.Automation.PSCredential ($username, $securePassword)
       Enter-PSSession -ComputerName $serverAddress -Credential $credentials
 
-      # Ejecutar comandos de instalación del agente en el servidor Windows
-      # Por ejemplo, puedes ejecutar un script de instalación del agente que está incluido en la carpeta del agente descargado
-      cd "$(System.DefaultWorkingDirectory)\agente_compilacion"
-      .\config.cmd --pool $(PoolName) --agent $(AgentName)
+      # Configurar el agente
+      Set-Location -Path "$(System.DefaultWorkingDirectory)\vsts-agent-win-x64-3.236.0"
+      .\config.cmd --unattended --url $AzureDevOpsOrganizationUrl --auth PAT --token $PAT --pool $PoolName --agent $AgentName
+
   displayName: 'Instalar agente de compilación en el servidor Windows'
